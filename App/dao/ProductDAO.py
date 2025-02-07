@@ -18,7 +18,7 @@ class ProductDAO:
 
     def getProductById(self, id):
         for product in self.products:
-            if product.castle_id == id:
+            if product.product_id== id:
                 return product
 
         return None
