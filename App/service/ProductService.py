@@ -1,4 +1,4 @@
-from dao.ProductDAO import ProductDAO
+from App.dao.ProductDAO import ProductDAO
 
 class ProductService:
     def __init__(self):
