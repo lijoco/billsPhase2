@@ -66,11 +66,11 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row  # Access rows as dictionaries
     return conn
 
-# Home page to display all items
+# Admin page to display all items
 @app.route('/adminCRUD')
 def adminCRUD():
     conn = get_db_connection()
-    products = conn.execute('SELECT id, name, price, description FROM products').fetchall()
+    products = conn.execute('SELECT id, name, FORMAT(price, 2), description FROM products').fetchall()
     conn.close()
     return render_template('adminCRUD.html', products=products)
 
