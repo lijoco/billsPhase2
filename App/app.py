@@ -1,6 +1,6 @@
-# This is really messy and unorganised, if you have time clean it up and add comments
+from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
 from service.ProductService import ProductService
 from dao.UserDAO import UserDAO
 from model.forms import RegistrationForm, LoginForm
@@ -8,44 +8,60 @@ import sqlite3
 import io
 
 app = Flask(__name__)
-FLASK_DEBUG = False
-app.config['SECRET_KEY'] = 'some_long_random_string'
+app.config['SECRET_KEY'] = 'some_long_random_string'  # Required for session management
+app.config['FLASK_DEBUG'] = False  # Debug mode
 
-
-productService = ProductService()
+# Initialize services and DAOs
+product_service = ProductService()
 user_dao = UserDAO()
+
+# Database connection function
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row  # Access rows as dictionaries
+    return conn
+
+# Decorator to restrict access to admins
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if user is logged in and is an admin
+        if 'user_type' not in session or session['user_type'] != 'admin':
+            flash('You do not have permission to access this page.', 'danger')
+            return redirect(url_for('index'))  # Redirect to home page or login page
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Route to Index
 @app.route('/')
-def index():  # put application's code here
-    products = productService.get_all_products()
-    return render_template('index.html', products = products)
+def index():
+    products = product_service.get_all_products()
+    return render_template('index.html', products=products)
 
 # Route to Product Detail Page
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    product = productService.get_product_by_id(product_id)
+    product = product_service.get_product_by_id(product_id)
     return render_template('ProductDetails.html', product=product)
 
-# To About page. Nothing here, could delete
+# Route to About Page
 @app.route('/about')
 def about():
     return render_template('about.html')
 
-# Route for user registration, displaying the form and handling submission
+# Route for User Registration
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         if user_dao.create_user(form.first_name.data, form.last_name.data, form.email.data, form.password.data, user_type='customer'):
-            flash('Account created for ' + form.first_name.data + form.last_name.data + '!', 'success')
+            flash(f'Account created for {form.first_name.data} {form.last_name.data}!', 'success')
             return redirect(url_for('index'))
         else:
             flash('Email already in use. Account creation failed. Please try again.', 'danger')
     return render_template('register.html', title='Register', form=form)
 
-# Route for user login, displaying the form and handling submission
-# None of these messages are flashing?
+# Route for User Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -53,6 +69,11 @@ def login():
         user = user_dao.get_user_by_email(form.email.data)
 
         if user and user.password == form.password.data:  # Check if user exists and password matches
+            # Store user information in the session
+            session['user_id'] = user.user_id
+            session['first_name'] = user.first_name
+            session['user_type'] = user.user_type  # Store user type
+
             if user.user_type == 'customer':
                 flash('You have been logged in as a customer!', 'success')
                 return redirect(url_for('index'))
@@ -64,45 +85,35 @@ def login():
 
     return render_template('login.html', title='Login', form=form)
 
-    #     if form.email.data == 'admin@blog.com' and form.password.data == 'password':
-    #         flash('You have been logged in!', 'success')
-    #         return redirect(url_for('index'))
-    #     else:
-    #         flash('Login Unsuccessful. Please check username and password', 'danger')
-    # return render_template('login.html', title='Login', form=form)
+# Route to Log out
+@app.route('/logout')
+def logout():
+    # Clear the session
+    session.clear()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
 
+# Route to Admin Homepage
 @app.route('/adminHomepage')
+@admin_required  # Restrict access to admins
 def adminhp():
     conn = get_db_connection()
-    products = conn.execute('SELECT id, name, FORMAT(price, 2), description FROM products').fetchall()
+    products = conn.execute('SELECT id, name, price, description FROM products').fetchall()
     conn.close()
     return render_template('adminHomepage.html', products=products)
 
+# Route to Basket Page
 @app.route('/basket')
 def basket():
     return render_template('basket.html')
 
-# Database connection function
-def get_db_connection():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row  # Access rows as dictionaries
-    return conn
-
-# Admin page to display all items
-@app.route('/adminCRUD')
-def adminCRUD():
-    conn = get_db_connection()
-    products = conn.execute('SELECT id, name, FORMAT(price, 2), description FROM products').fetchall()
-    conn.close()
-    return render_template('adminCRUD.html', products=products)
-
-# Add or Edit an item
+# Route to Add or Edit an Item
 @app.route('/edit/<int:id>', methods=('GET', 'POST'))
 @app.route('/add', methods=('GET', 'POST'), defaults={'id': None})
 def edit(id):
     conn = get_db_connection()
 
-    # If editing, fetch item
+    # Fetch product if editing
     product = None
     if id:
         product = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
@@ -125,7 +136,7 @@ def edit(id):
                 conn.execute('UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
                              (name, price, description, id))
         else:  # Insert new item
-            conn.execute('INSERT INTO products (name, price = ?, description, image) VALUES (?, ?, ?, ?)',
+            conn.execute('INSERT INTO products (name, price, description, image) VALUES (?, ?, ?, ?)',
                          (name, price, description, image_data))
 
         conn.commit()
@@ -135,7 +146,7 @@ def edit(id):
     conn.close()
     return render_template('edit.html', product=product)
 
-# Delete an item
+# Route to Delete an Item
 @app.route('/delete/<int:id>')
 def delete(id):
     conn = get_db_connection()
@@ -144,7 +155,7 @@ def delete(id):
     conn.close()
     return redirect(url_for('adminCRUD'))
 
-# Fetch image from database
+# Route to Fetch Image from Database
 @app.route('/image/<int:id>')
 def get_image(id):
     conn = get_db_connection()

@@ -1,117 +1,40 @@
 {% extends 'base.html' %}
-
 {% block content %}
-    <body class="sb-nav-fixed">
-
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid px-4">
-                    <h1 class="mt-4">Dashboard</h1>
-
-{#                    This is where the cards start#}
-                    <ol class="breadcrumb mb-4">
-                        <li class="breadcrumb-item active">Dashboard</li>
-                    </ol>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-primary text-white mb-4">
-                                <div class="card-body">Nothing here</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-{#                                    <a class="small text-white stretched-link" href="#">View Details</a>#}
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-
-{#                        Yellow Card#}
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-warning text-white mb-4">
-                                <div class="card-body">Or Here</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-{#                                    <a class="small text-white stretched-link" href="#">View Details</a>#}
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-
-{#                        Green Card#}
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-success text-white mb-4">
-                                <div class="card-body">Or Here</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-{#                                      <a class="small text-white stretched-link" href="#">View Details</a>#}
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-
-{#                        Red Card#}
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-danger text-white mb-4">
-                                <div class="card-body">And Nothing Here</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-{#                                    <a class="small text-white stretched-link" href="#">View Details</a>#}
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-{#                Table starts here#}
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            <h2>Product Table</h2>
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Image</th>
-                                        <th>Name</th>
-                                        <th>Price €</th>
-                                        <th>Description</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for product in products %}
-                                    <tr>
-                                        <td>
-                                            {% if product.id %}
-                                                <img src="{{ url_for('get_image', id=product.id) }}" alt="Item Image" height="200" width="300">
-                                            {% else %}
-                                                No Image
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ product.name }}</td>
-                                        <td>{{ product.price }}</td>
-                                        <td>{{ product.description }}</td>
-                                        <td>
-                                            <a href="{{ url_for('edit', id=product.id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                            <a href="{{ url_for('delete', id=product.id) }}" class="btn btn-danger btn-sm">Delete</a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>
-                                            <img src="{{ url_for('static', filename='assets/favicon.ico') }}" alt="Placeholder Image" height="200" width="300">
-                                        </td>
-                                        <td>New Product</td>
-                                        <td colspan="2">
-                                            <a href="{{ url_for('edit', id=None) }}" class="btn btn-primary mb-3">Add Item</a>
-                                        </td>
-                                        <td>Check</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
+    <section class="py-5">
+        <div class="container px-1 px-lg-3 mt-3">
+            <h1>Item List</h1>
+            <a href="{{ url_for('edit', id=None) }}" class="btn btn-primary mb-3">Add Item</a>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Price €</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            {% if product.id %}
+                                <img src="{{ url_for('get_image', id=product.id) }}" alt="Item Image" height="200" width="300">
+                            {% else %}
+                                No Image
+                            {% endif %}
+                        </td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.price }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>
+                            <a href="{{ url_for('edit', id=product.id) }}" class="btn btn-warning btn-sm">Edit</a>
+                            <a href="{{ url_for('delete', id=product.id) }}" class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </body>
-
-{% endblock content %}
+    </section>
+{% endblock %}
