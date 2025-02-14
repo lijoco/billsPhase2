@@ -8,9 +8,9 @@
             <div class="col-md-6">
                 <img
                     class="img-fluid"
-                    src="{{ url_for('static', filename=product.image_url) }}"
-                    alt="Product Image"
-                    onerror="this.src='{{ url_for('static', filename='images/error_placeholder.jpg') }}';"
+                    src="{{ url_for('get_image', id=product.product_id) }}"
+                    alt="{{ product.name }}"
+                    onerror="this.src='{{ url_for('static', filename='assets/favicon.ico') }}';"
                 />
             </div>
             <!-- Product Details -->

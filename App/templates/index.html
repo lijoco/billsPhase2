@@ -9,8 +9,8 @@
                     <div class="card h-100">
                         <!-- Product image-->
                         <img class="card-img-top"
-                             src="{{ url_for('static', filename=product.image_url) }}"
-                             alt="Bouncy Castle"
+                             src="{{ url_for('get_image', id=product.product_id) }}"
+                             alt="{{ product.name }}"
                              onerror="this.src='{{ url_for('static', filename='assets/favicon.ico') }}';"
                         />
                         <!-- Product details -->

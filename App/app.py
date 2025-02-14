@@ -141,7 +141,7 @@ def edit(id):
 
         conn.commit()
         conn.close()
-        return redirect(url_for('adminCRUD'))
+        return redirect(url_for('adminhp'))
 
     conn.close()
     return render_template('edit.html', product=product)
@@ -153,7 +153,7 @@ def delete(id):
     conn.execute('DELETE FROM products WHERE id = ?', (id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('adminCRUD'))
+    return redirect(url_for('adminhp'))
 
 # Route to Fetch Image from Database
 @app.route('/image/<int:id>')
