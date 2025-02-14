@@ -4,6 +4,13 @@
 
 <section class="py-5">
     <div class="container px-4 px-lg-5 mt-5">
+        <h1>Note</h1>
+        <p>To Login as Admin<br>
+        Username: admin@blog.com<br>
+        Password: password</p>
+        <p>To Login as a Customer please Register</p>
+        <h2>Business Assumption</h2>
+        <p>Users will only be able to register as customers. Admins will be hard coded in.</p>
         <form method="POST" action="{{ url_for('login') }}">
             {{ form.hidden_tag() }}  {# Adding CSRF Token (Security thing) #}
             <fieldset class="form-group">  {# See Bootstrap documentation #}

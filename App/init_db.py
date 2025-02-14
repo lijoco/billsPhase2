@@ -5,12 +5,6 @@ from App.model.Product import Product
 # Path to the directory containing images
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'static', 'images')
 
-# Debugging: Check if the image directory exists
-if not os.path.exists(IMAGE_DIR):
-    print(f"Error: Image directory does not exist: {IMAGE_DIR}")
-else:
-    print(f"Image directory found: {IMAGE_DIR}")
-
 # Sample data (Item name, description, and corresponding image filename)
 sample_data = [
     Product(1, "Princess Castle", 100.00, "Pink", "princess_castle.jpg"),
@@ -31,7 +25,7 @@ def get_image_blob(image_filename):
             return file.read()
     return None  # Return None if the image file does not exist
 
-# Initialize the database
+# Initialize product database
 def initialize_database():
     try:
         # Connect to SQLite database (creates the file if it doesn't exist)
@@ -40,7 +34,7 @@ def initialize_database():
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Create table with an image BLOB field
+        # Create product table
         cursor.execute('''CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -49,13 +43,22 @@ def initialize_database():
             image BLOB
         )''')
 
-        # Debugging: Check if table creation was successful
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='products';")
-        table_check = cursor.fetchone()
-        if table_check:
-            print("Table 'products' exists.")
-        else:
-            print("Table 'products' does not exist.")
+        # Create user table
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            user_type TEXT NOT NULL)''')
+
+        # Hard coded Admin Password
+        # Not going to hash this because I want to be able to see it
+        # Assumption: users cannot register to be admins, admins will be hard coded in
+        # There will only be one admin example, so I'm not going to hash it as I will be displaying it to you in the login anyway
+        cursor.execute('''INSERT INTO users (
+            first_name, last_name, email, password, user_type)
+            VALUES ('Admin', 'Test', 'admin@blog.com', 'password', 'admin')''')
 
         # Clear existing data (optional)
         cursor.execute("DELETE FROM products")
@@ -81,22 +84,18 @@ def initialize_database():
     except sqlite3.Error as e:
         print(f"Error initializing database: {e}")
 
+
+
 if __name__ == "__main__":
     initialize_database()
 
     # Test - don't use * cause it prints out the BLOB too and its unreadable
-    try:
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT name, price, description FROM products")
-        rows = cursor.fetchall()
-        print("Below is the DB:")
-        for row in rows:
-            print(row)
-        conn.close()
-    except sqlite3.Error as e:
-        print(f"Error querying the database: {e}")
-
-    db_path = os.path.abspath('database.db')
-    print(f"Using database: {db_path}")
-
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    # cursor.execute("SELECT name, price, description FROM products")
+    cursor.execute("SELECT * FROM users")
+    rows = cursor.fetchall()
+    print("Below is the DB:")
+    for row in rows:
+        print(row)
+    conn.close()

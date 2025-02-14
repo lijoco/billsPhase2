@@ -1,9 +1,8 @@
-# This is the current version 07/02/2025 00:44 Everything works
-
-# May need to remove username from user DAO
+# This is really messy and unorganised, if you have time clean it up and add comments
 
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from service.ProductService import ProductService
+from dao.UserDAO import UserDAO
 from model.forms import RegistrationForm, LoginForm
 import sqlite3
 import io
@@ -14,47 +13,70 @@ app.config['SECRET_KEY'] = 'some_long_random_string'
 
 
 productService = ProductService()
+user_dao = UserDAO()
+
+# Route to Index
 @app.route('/')
 def index():  # put application's code here
     products = productService.get_all_products()
     return render_template('index.html', products = products)
 
+# Route to Product Detail Page
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = productService.get_product_by_id(product_id)
     return render_template('ProductDetails.html', product=product)
 
+# To About page. Nothing here, could delete
 @app.route('/about')
 def about():
     return render_template('about.html')
 
 # Route for user registration, displaying the form and handling submission
-# Not working fully just yet. Included it so you can see where I'm going with things for the second project.
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        flash(f'Account created for {form.username.data}!', 'success')
-        return redirect(url_for('index'))
+        if user_dao.create_user(form.first_name.data, form.last_name.data, form.email.data, form.password.data, user_type='customer'):
+            flash('Account created for ' + form.first_name.data + form.last_name.data + '!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Email already in use. Account creation failed. Please try again.', 'danger')
     return render_template('register.html', title='Register', form=form)
 
 # Route for user login, displaying the form and handling submission
-# Not working fully just yet. Included it to show additional features.
-# Sample log in details: email: admin@blog.com password: password
+# None of these messages are flashing?
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        if form.email.data == 'admin@blog.com' and form.password.data == 'password':
-            flash('You have been logged in!', 'success')
-            return redirect(url_for('index'))
+        user = user_dao.get_user_by_email(form.email.data)
+
+        if user and user.password == form.password.data:  # Check if user exists and password matches
+            if user.user_type == 'customer':
+                flash('You have been logged in as a customer!', 'success')
+                return redirect(url_for('index'))
+            elif user.user_type == 'admin':
+                flash('You have been logged in as an admin!', 'success')
+                return redirect(url_for('adminhp'))
         else:
-            flash('Login Unsuccessful. Please check username and password', 'danger')
+            flash('Login Unsuccessful. Please check email and password', 'danger')
+
     return render_template('login.html', title='Login', form=form)
+
+    #     if form.email.data == 'admin@blog.com' and form.password.data == 'password':
+    #         flash('You have been logged in!', 'success')
+    #         return redirect(url_for('index'))
+    #     else:
+    #         flash('Login Unsuccessful. Please check username and password', 'danger')
+    # return render_template('login.html', title='Login', form=form)
 
 @app.route('/adminHomepage')
 def adminhp():
-    return render_template('adminHomepage.html')
+    conn = get_db_connection()
+    products = conn.execute('SELECT id, name, FORMAT(price, 2), description FROM products').fetchall()
+    conn.close()
+    return render_template('adminHomepage.html', products=products)
 
 @app.route('/basket')
 def basket():
